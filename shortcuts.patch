@@ -1,0 +1,54 @@
+--- nemo_terminal.py
++++ nemo_terminal.py
+@@ -78,6 +78,33 @@
+         window -- The parent window.
+     """
+ 
++    def _on_terminal_shortcut(self, window, event):
++        modifiers = event.state & Gtk.accelerator_get_default_mod_mask()
++
++        if modifiers != Gdk.ModifierType.CONTROL_MASK:
++            return Gdk.EVENT_PROPAGATE
++
++        focused = window.get_focus()
++        terminal_focused = (
++            self.term.is_focus()
++            or self.term.has_focus()
++            or focused == self.term
++        )
++
++        if not terminal_focused:
++            return Gdk.EVENT_PROPAGATE
++
++        if event.keyval in (Gdk.KEY_c, Gdk.KEY_C):
++            if self.term.get_has_selection():
++                self.term.copy_clipboard()
++            return Gdk.EVENT_STOP
++
++        if event.keyval in (Gdk.KEY_v, Gdk.KEY_V):
++            self.term.paste_clipboard()
++            return Gdk.EVENT_STOP
++
++        return Gdk.EVENT_PROPAGATE
++
+     def __init__(self, uri, window):
+         """The constructor."""
+         self._window = window
+@@ -98,6 +125,9 @@
+         self.term.connect_after("popup-menu", self._on_term_popup_menu)
+         self.term.connect("button-press-event", self._on_term_popup_menu)
+ 
++        self._shortcut_handler = self._window.connect(
++            "key-press-event", self._on_terminal_shortcut)
++
+         #Accelerators
+         accel_group = Gtk.AccelGroup()
+         self._window.add_accel_group(accel_group)
+@@ -332,6 +362,7 @@
+             pass
+         #Remove some widgets
+         self.vscrollbar.destroy()
++        self._window.disconnect(self._shortcut_handler)
+         self.term.destroy()
+         self.hbox.destroy()
+         #Remove callback

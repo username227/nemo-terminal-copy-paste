@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = nemo-terminal
+
+[Action]
+Description = Reapplying Nemo Terminal keyboard shortcuts
+When = PostTransaction
+Exec = /usr/bin/nemo-terminal-shortcuts-apply apply

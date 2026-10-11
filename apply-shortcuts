@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+
+target=/usr/share/nemo-python/extensions/nemo_terminal.py
+patchfile=/usr/share/nemo-terminal-shortcuts/shortcuts.patch
+directory=$(dirname "$target")
+
+if [[ ! -f "$target" ]]; then
+    echo "Nemo Terminal extension not found." >&2
+    exit 1
+fi
+
+case "${1:-apply}" in
+    apply)
+        if patch --dry-run --batch --forward -p0 -d "$directory" \
+            < "$patchfile" >/dev/null 2>&1; then
+            patch --batch --forward -p0 -d "$directory" < "$patchfile"
+        elif patch --dry-run --batch -R -p0 -d "$directory" \
+            < "$patchfile" >/dev/null 2>&1; then
+            echo "Nemo Terminal shortcuts already patched."
+        else
+            echo "ERROR: Patch incompatible with installed Nemo Terminal." >&2
+            exit 1
+        fi
+        ;;
+    remove)
+        if patch --dry-run --batch -R -p0 -d "$directory" \
+            < "$patchfile" >/dev/null 2>&1; then
+            patch --batch -R -p0 -d "$directory" < "$patchfile"
+        elif patch --dry-run --batch --forward -p0 -d "$directory" \
+            < "$patchfile" >/dev/null 2>&1; then
+            echo "Nemo Terminal already unpatched."
+        else
+            echo "WARNING: Cannot safely reverse patch." >&2
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {apply|remove}" >&2
+        exit 2
+        ;;
+esac
